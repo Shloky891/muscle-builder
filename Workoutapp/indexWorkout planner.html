@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Muscle Builder"/>
+<meta name="theme-color" content="#0f172a"/>
+<link rel="manifest" href="manifest.json"/>
+<title>Muscle Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0f172a;--surface:#1e293b;--surface2:#263347;--border:#334155;
+    --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+    --red:#ef4444;--blue:#3b82f6;--green:#22c55e;--purple:#a855f7;--slate:#64748b;
+  }
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;overflow:hidden}
+  body{display:flex;flex-direction:column}
+
+  /* NAV */
+  .nav{display:flex;justify-content:space-around;background:var(--surface);border-top:1px solid var(--border);padding:8px 0 max(8px, env(safe-area-inset-bottom));flex-shrink:0;position:relative;z-index:10}
+  .nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 20px;border:none;background:none;color:var(--text3);font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:color .2s;letter-spacing:.04em}
+  .nav-btn svg{width:22px;height:22px;transition:transform .2s}
+  .nav-btn.active{color:var(--text)}
+  .nav-btn.active svg{transform:scale(1.1)}
+
+  /* SCREENS */
+  .screen{flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;padding-bottom:16px}
+  .screen.active{display:flex}
+  .screen::-webkit-scrollbar{display:none}
+
+  /* WORKOUT SCREEN */
+  .top-bar{padding:env(safe-area-inset-top,20px) 16px 0;padding-top:max(env(safe-area-inset-top),24px)}
+  .top-meta{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+  .app-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;letter-spacing:.02em;line-height:1}
+  .app-sub{font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+  .divider{height:1px;background:var(--border);margin:14px 0}
+
+  /* DAY TABS */
+  .day-tabs{display:flex;gap:8px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none}
+  .day-tabs::-webkit-scrollbar{display:none}
+  .day-tab{flex-shrink:0;border:none;padding:8px 12px;border-radius:12px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.06em;transition:all .18s;background:var(--surface);color:var(--text3);text-align:center;min-width:52px}
+  .day-tab span{display:block;font-size:13px}
+  .day-tab small{display:block;font-size:9px;opacity:.7;margin-top:1px}
+  .day-tab.active{color:#fff}
+
+  /* CARD */
+  .card{margin:12px 16px 0;background:var(--surface);border-radius:18px;overflow:hidden;border:1px solid var(--border)}
+  .card-header{padding:16px 18px 14px;border-left:4px solid var(--accent)}
+  .card-header h2{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:.03em;color:var(--text)}
+  .card-header p{font-size:13px;color:var(--text2);margin-top:3px}
+  .card-header-row{display:flex;align-items:flex-start;justify-content:space-between}
+  .tag{font-size:10px;font-weight:800;font-family:'Barlow Condensed',sans-serif;letter-spacing:.1em;padding:4px 10px;border-radius:6px}
+
+  /* PROGRESS */
+  .prog-wrap{margin-top:12px}
+  .prog-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.08em}
+  .prog-bar{height:3px;background:var(--surface2);border-radius:99px;overflow:hidden}
+  .prog-fill{height:100%;border-radius:99px;background:var(--accent);transition:width .4s ease}
+
+  /* COL HEADERS */
+  .col-head{display:flex;align-items:center;padding:8px 18px;background:var(--surface2);border-top:1px solid var(--border)}
+  .col-head span{font-size:9px;color:var(--text3);font-weight:700;letter-spacing:.1em;font-family:'Barlow Condensed',sans-serif}
+  .col-ex{flex:1}
+  .col-sets{width:38px;text-align:center}
+  .col-reps{width:58px;text-align:center}
+  .col-info{width:28px}
+
+  /* EXERCISE ROW */
+  .ex-row{display:flex;align-items:center;padding:13px 18px;border-top:1px solid var(--border);cursor:pointer;transition:background .15s;gap:12px}
+  .ex-row:active{background:var(--surface2)}
+  .ex-row.done{opacity:.35}
+  .check{width:22px;height:22px;border-radius:7px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .check.ticked{border-color:transparent}
+  .ex-name{font-size:14px;font-weight:600;color:var(--text);transition:color .2s}
+  .ex-row.done .ex-name{text-decoration:line-through;color:var(--text3)}
+  .ex-note{font-size:11px;color:var(--text3);margin-top:2px}
+  .ex-meta{flex:1;min-width:0}
+  .ex-sets{font-size:15px;font-weight:800;color:var(--text2);width:38px;text-align:center;font-family:'Barlow Condensed',sans-serif}
+  .ex-reps{font-size:11px;color:var(--text3);width:58px;text-align:center;font-weight:600}
+  .info-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:none;color:var(--text3);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+  .info-btn:active{background:var(--surface2);color:var(--text)}
+
+  /* REST DAY */
+  .rest-day{padding:40px;text-align:center}
+  .rest-day .emoji{font-size:48px;margin-bottom:12px}
+  .rest-day h3{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--text)}
+  .rest-day p{font-size:13px;color:var(--text2);margin-top:6px}
+
+  /* TIPS SCREEN */
+  .screen-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;letter-spacing:.03em;padding:max(env(safe-area-inset-top),24px) 16px 0}
+  .tips-grid{padding:16px;display:flex;flex-direction:column;gap:10px}
+  .tip-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;gap:14px;align-items:flex-start}
+  .tip-icon{font-size:24px;flex-shrink:0;width:36px;text-align:center}
+  .tip-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+  .tip-body{font-size:12px;color:var(--text2);line-height:1.55}
+
+  /* FORM MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:flex-end;backdrop-filter:blur(4px)}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border-radius:24px 24px 0 0;padding:0 0 max(24px,env(safe-area-inset-bottom));width:100%;max-height:85vh;overflow-y:auto;animation:slideUp .28s cubic-bezier(.2,.8,.3,1)}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 0}
+  .modal-header{padding:16px 20px 14px;border-bottom:1px solid var(--border)}
+  .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;letter-spacing:.03em;color:var(--text)}
+  .modal-tag{font-size:10px;font-weight:700;letter-spacing:.08em;margin-top:4px}
+  .modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:none;background:var(--surface2);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .modal-body{padding:16px 20px}
+  .form-section{margin-bottom:20px}
+  .form-section-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif}
+  .form-step{display:flex;gap:12px;margin-bottom:10px}
+  .step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .step-text{font-size:13px;color:var(--text2);line-height:1.5;flex:1}
+  .common-errors{background:var(--surface2);border-radius:12px;padding:14px}
+  .error-item{display:flex;gap:8px;font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.4}
+  .error-item:last-child{margin-bottom:0}
+  .error-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px}
+  .muscles-row{display:flex;flex-wrap:wrap;gap:6px}
+  .muscle-pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+  .muscle-pill.primary{background:rgba(59,130,246,.15);color:#93c5fd;border-color:rgba(59,130,246,.3)}
+</style>
+</head>
+<body>
+
+<!-- WORKOUT SCREEN -->
+<div class="screen active" id="screen-workout">
+  <div class="top-bar" style="padding:max(env(safe-area-inset-top),24px) 16px 0">
+    <div class="top-meta">
+      <div>
+        <div class="app-title">MUSCLE<br>BUILDER</div>
+      </div>
+      <div style="text-align:right;padding-top:4px">
+        <div class="app-sub">17y · 68kg · 173cm</div>
+        <div class="app-sub" style="margin-top:2px">30–45 min/day</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+  </div>
+  <div class="day-tabs" id="day-tabs"></div>
+  <div id="day-content"></div>
+</div>
+
+<!-- TIPS SCREEN -->
+<div class="screen" id="screen-tips">
+  <div class="screen-title">KEY PRINCIPLES</div>
+  <div class="tips-grid" id="tips-grid"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-workout" onclick="switchScreen('workout')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 4v16M18 4v16M2 9h4M18 9h4M2 15h4M18 15h4M6 9h12v6H6z"/>
+    </svg>
+    WORKOUT
+  </button>
+  <button class="nav-btn" id="nav-tips" onclick="switchScreen('tips')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    TIPS
+  </button>
+</nav>
+
+<!-- FORM MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-tag" id="modal-tag"></div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const TAG_COLORS = {
+  PUSH:{bg:'#fee2e2',color:'#991b1b',accent:'#dc2626'},
+  PULL:{bg:'#dbeafe',color:'#1e40af',accent:'#2563eb'},
+  LEGS:{bg:'#dcfce7',color:'#166534',accent:'#16a34a'},
+  FULL:{bg:'#ede9fe',color:'#5b21b6',accent:'#7c3aed'},
+  REST:{bg:'#1e293b',color:'#64748b',accent:'#64748b'},
+};
+
+const PLAN = [
+  {day:'Monday',focus:'Push — Chest & Triceps',tag:'PUSH',exercises:[
+    {name:'Push-ups (wide grip)',sets:'4',reps:'12–15',note:'Slow 3s descent',
+     muscles:['Chest','Triceps','Front Delts'],primary:['Chest'],
+     steps:['Set up in a high plank: hands slightly wider than shoulder-width, fingers pointing forward, body in a straight line from head to heels.',
+             'Brace your core and squeeze your glutes to keep your hips from sagging.',
+             'Lower yourself slowly over 3 seconds, chest just grazing the floor. Elbows flare about 45° — not straight out, not pinned to your sides.',
+             'Press back up explosively, fully extending your arms at the top. Squeeze your chest at the top.'],
+     errors:['Hips sagging or raised too high — your body should be a rigid plank','Elbows flaring at 90° — this stresses your shoulders','Not going to full depth — chest should nearly touch the floor','Looking up and craning your neck — keep a neutral spine']},
+    {name:'Dumbbell Chest Press',sets:'3',reps:'10–12',note:'On floor or bench',
+     muscles:['Chest','Triceps','Front Delts'],primary:['Chest'],
+     steps:['Lie on your back on the floor or bench. Hold dumbbells at chest level, elbows at ~45° from your torso, palms facing your feet.',
+             'Press the dumbbells up and slightly inward so they nearly touch at the top. Do not lock out your elbows aggressively.',
+             'Lower slowly with control over 2–3 seconds — feel the stretch in your chest.',
+             'Drive back up powerfully. Think about "pushing the floor away" rather than just lifting the weight.'],
+     errors:['Letting elbows flare to 90° — increases shoulder injury risk','Bouncing the weight off your chest — removes tension from the muscle','Lifting your lower back off the surface — arch slightly but keep contact','Dumbbells drifting too far apart at the top — keep them controlled']},
+    {name:'Dumbbell Flyes',sets:'3',reps:'12',note:'Full stretch at bottom',
+     muscles:['Chest','Front Delts'],primary:['Chest'],
+     steps:['Lie on floor or bench, hold dumbbells above your chest with a slight bend in the elbows — maintain this bend throughout.',
+             'Open your arms wide and lower the dumbbells in a wide arc, feeling a deep stretch across your chest.',
+             'Stop when your upper arms are roughly parallel to the floor — do not go lower or you risk shoulder strain.',
+             'Squeeze your chest to bring the dumbbells back up in the same arc. Imagine hugging a large tree.'],
+     errors:['Straightening your arms fully — turns it into a tricep exercise and risks elbow injury','Going too deep past parallel — excessive shoulder stress','Using too much weight — this is a stretch and squeeze exercise, keep it light and controlled','Rushing the movement — the stretch phase is where the growth happens']},
+    {name:'Tricep Bar Skull Crushers',sets:'3',reps:'10–12',note:'',
+     muscles:['Triceps'],primary:['Triceps'],
+     steps:['Lie flat, hold the tricep bar above your chest with arms extended, elbows facing the ceiling.',
+             'Keeping your upper arms completely still and vertical, hinge only at the elbows and lower the bar toward your forehead.',
+             'Stop just before the bar reaches your head, pause for a moment.',
+             'Extend your elbows back to the start position, squeezing your triceps hard at the top.'],
+     errors:['Moving your upper arms — only your forearms should move','Flaring your elbows outward — keep them pointed at the ceiling','Lowering too fast — control the descent to protect your elbows','Using too much weight and losing form — go lighter, full ROM beats heavy and sloppy']},
+    {name:'Tricep Bar Close-Grip Press',sets:'3',reps:'10',note:'',
+     muscles:['Triceps','Chest'],primary:['Triceps'],
+     steps:['Lie flat, grip the tricep bar with arms extended above your lower chest/sternum.',
+             'Keep elbows tucked close to your body throughout — this is the key to hitting triceps over chest.',
+             'Lower the bar to your lower chest with control over 2 seconds.',
+             'Press back up powerfully, fully extending at the top and squeezing your triceps.'],
+     errors:['Letting elbows flare out — shifts load to chest, loses the tricep focus','Gripping too wide — defeats the purpose of the close-grip variation','Bar path drifting to your upper chest — aim for your lower sternum','Partial reps — always go to full extension at the top']},
+    {name:'Resistance Band Tricep Pushdown',sets:'3',reps:'15',note:'Finisher',
+     muscles:['Triceps'],primary:['Triceps'],
+     steps:['Anchor the band overhead (door, pull-up bar). Stand facing the anchor, hold band with both hands, elbows pinned to your sides.',
+             'Upper arms stay completely still the entire set — only your forearms move.',
+             'Push down until your arms are fully extended, hold for 1 second, squeezing hard.',
+             'Slowly return to the start over 2 seconds. The burn here is the point — lean into it.'],
+     errors:['Letting your elbows drift away from your sides — ruins the isolation','Leaning forward to use momentum — you should be able to stand tall','Not reaching full extension — squeeze all the way down','Going too fast — slow and controlled, especially the return']},
+  ]},
+  {day:'Tuesday',focus:'Pull — Back & Biceps',tag:'PULL',exercises:[
+    {name:'Pull-ups (wide grip)',sets:'4',reps:'Max',note:'Full ROM',
+     muscles:['Lats','Biceps','Rear Delts','Rhomboids'],primary:['Lats'],
+     steps:['Hang from the bar with hands wider than shoulder-width, palms facing away. Full hang — arms completely straight.',
+             'Initiate by depressing your shoulder blades (pull them down and back) before bending your elbows.',
+             'Pull your chest toward the bar, leading with your elbows. Get your chin clearly above the bar.',
+             'Lower yourself slowly and with full control back to a dead hang. Every rep from a full hang.'],
+     errors:['Starting without shoulder blade engagement — you lose back activation','Kipping or swinging — this is not CrossFit, controlled reps only','Not reaching a full dead hang — partial range of motion = partial gains','Chin barely clearing the bar — aim to get your upper chest to the bar over time']},
+    {name:'Chin-ups (supinated)',sets:'3',reps:'Max',note:'Squeeze biceps at top',
+     muscles:['Biceps','Lats','Chest'],primary:['Biceps','Lats'],
+     steps:['Hang with palms facing you (supinated), hands shoulder-width apart.',
+             'Pull yourself up by thinking "elbows to hips" — lead with your elbows pulling down, not just your hands pulling.',
+             'At the top, your chin clears the bar. Hold for 1 second and squeeze your biceps hard.',
+             'Lower slowly over 2–3 seconds back to full hang.'],
+     errors:['Not squeezing at the top — the pause is where the bicep contraction happens','Elbows drifting forward at the top — keep them tracking down','Rushing down — the slow eccentric (lowering) builds more muscle','Shrugging your shoulders — keep them packed down throughout']},
+    {name:'Dumbbell Bent-over Row',sets:'3',reps:'10–12',note:'Each arm',
+     muscles:['Lats','Rhomboids','Rear Delts','Biceps'],primary:['Lats','Rhomboids'],
+     steps:['Place one knee and hand on a bench or chair for support. Hold dumbbell in the other hand, arm hanging straight down.',
+             'Keep your back completely flat and parallel-ish to the floor. Do not rotate your torso.',
+             'Row the dumbbell up by driving your elbow toward the ceiling and pulling it past your hip.',
+             'At the top, squeeze your shoulder blade hard for 1 second. Lower slowly with control.'],
+     errors:['Rotating your torso to swing the weight up — momentum cheats your back','Not driving the elbow high enough — aim for elbow well above your back','Rounding your lower back — keep it flat and rigid the entire set','Pulling with your hand instead of your elbow — think "elbow, not hand"']},
+    {name:'Machine Row / Resistance Band Row',sets:'3',reps:'12',note:'',
+     muscles:['Rhomboids','Traps','Rear Delts','Biceps'],primary:['Rhomboids','Traps'],
+     steps:['Anchor band at chest height. Hold with both hands, step back to create tension, feet shoulder-width.',
+             'Start with arms extended, slight forward lean. Keep your chest tall.',
+             'Row toward your lower chest/upper stomach, driving elbows back. Squeeze your shoulder blades together hard at the peak.',
+             'Control the return all the way to full arm extension. Do not let the band yank you forward.'],
+     errors:['Using momentum and leaning back — row with your back, not your body weight','Not squeezing shoulder blades together — the squeeze is the whole point of this exercise','Pulling to your neck instead of your stomach — aim for lower chest or sternum','Letting the band snap back — the return should be as slow as the pull']},
+    {name:'Dumbbell Bicep Curl',sets:'3',reps:'12',note:'',
+     muscles:['Biceps','Brachialis'],primary:['Biceps'],
+     steps:['Stand with dumbbells at your sides, palms facing forward. Elbows pinned to your sides.',
+             'Curl the dumbbells up by bending your elbows only — your upper arms must not move.',
+             'Supinate (rotate) your wrists fully as you curl so pinkies lead at the top.',
+             'Squeeze hard at the top, then lower slowly over 2–3 seconds all the way down.'],
+     errors:['Swinging your torso back — this is cheating with your back, not curling with your biceps','Upper arms drifting forward as you curl — pin those elbows','Not going all the way down — full extension stretches the bicep and builds more muscle','Not supinating — rotating at the top increases bicep engagement significantly']},
+    {name:'Hammer Curl',sets:'3',reps:'10',note:'Brachialis focus',
+     muscles:['Brachialis','Biceps','Brachioradialis'],primary:['Brachialis'],
+     steps:['Stand with dumbbells at your sides, palms facing each other (neutral grip) — maintain this throughout.',
+             'Curl both dumbbells up simultaneously, keeping palms facing inward the entire time. No rotation.',
+             'Drive to full contraction at the top, holding for a beat.',
+             'Lower with control. The neutral grip targets the brachialis muscle under your bicep — this adds thickness to your arm.'],
+     errors:['Rotating your wrist during the curl — this becomes a regular curl and loses brachialis focus','Swinging or using momentum — keep it strict and slow','Partial range of motion — go all the way up and all the way down','Going too heavy — hammer curls are best done with moderate weight and perfect form']},
+  ]},
+  {day:'Wednesday',focus:'Legs & Core',tag:'LEGS',exercises:[
+    {name:'Dumbbell Goblet Squat',sets:'4',reps:'15',note:'Keep chest up',
+     muscles:['Quads','Glutes','Hamstrings','Core'],primary:['Quads','Glutes'],
+     steps:['Hold one dumbbell vertically at your chest with both hands cupped under the top end.',
+             'Feet shoulder-width or slightly wider, toes turned out 15–30°.',
+             'Squat down by pushing your knees out over your toes and sitting your hips back and down. Keep your chest tall and upright.',
+             'Go until your elbows touch your inner knees (deep squat), then drive back up through your heels.'],
+     errors:['Chest caving forward — the dumbbell should help you stay upright, use it','Knees caving inward — actively push knees out over your pinky toe','Heels rising — if this happens, widen your stance or point toes out more','Partial depth — aim for thighs at least parallel to the floor']},
+    {name:'Dumbbell Romanian Deadlift',sets:'3',reps:'12',note:'Hip hinge, feel stretch',
+     muscles:['Hamstrings','Glutes','Lower Back'],primary:['Hamstrings','Glutes'],
+     steps:['Hold dumbbells in front of your thighs, feet hip-width, soft bend in the knees — maintain this knee angle throughout.',
+             'Push your hips back (not down) as you hinge forward. The dumbbells slide down your legs.',
+             'Lower until you feel a strong stretch in your hamstrings — usually just past your knees. Back stays perfectly flat.',
+             'Drive your hips forward to return to standing. Squeeze your glutes hard at the top.'],
+     errors:['Bending your knees too much — this becomes a squat, not a deadlift','Rounding your lower back — this is a back injury waiting to happen, go lighter','Letting the dumbbells drift away from your legs — keep them in contact','Not feeling the hamstring stretch — if you do not feel it, you are squatting not hinging']},
+    {name:'Dumbbell Lunges',sets:'3',reps:'10 each',note:'Walking or stationary',
+     muscles:['Quads','Glutes','Hamstrings','Balance'],primary:['Quads','Glutes'],
+     steps:['Hold dumbbells at your sides, stand tall. Step forward with one foot into a long stride.',
+             'Lower your back knee toward the floor, front shin stays roughly vertical.',
+             'Go until your back knee is 1–2cm from the floor. Both knees at roughly 90°.',
+             'Push off your front heel to return, then repeat on the other side. Keep your torso upright throughout.'],
+     errors:['Front knee caving inward — push it outward actively','Torso leaning too far forward — stay upright','Front knee going past your toes excessively — take a longer step','Back knee smashing the floor — control the descent']},
+    {name:'Machine Leg Press (if available)',sets:'3',reps:'15',note:'',
+     muscles:['Quads','Glutes','Hamstrings'],primary:['Quads'],
+     steps:['Set foot position shoulder-width on the platform. Higher foot placement = more glutes/hamstrings. Lower = more quads.',
+             'Lower the platform by bending your knees toward your chest. Go until knees are at 90° or slightly past.',
+             'Stop before your lower back rounds off the seat — that is too deep for your anatomy.',
+             'Press through your heels powerfully to full extension, but do not lock your knees out hard.'],
+     errors:['Placing feet too low and going too deep — lower back will round','Locking out your knees violently at the top — keep a slight bend','Feet too narrow — increases knee stress significantly','Letting your knees cave inward on the press — push them out']},
+    {name:'Calf Raises (bodyweight)',sets:'4',reps:'20',note:'Slow & controlled',
+     muscles:['Gastrocnemius','Soleus'],primary:['Gastrocnemius'],
+     steps:['Stand on the edge of a step or flat ground, feet hip-width. If on a step, let your heels drop below the step level.',
+             'Rise up as high as possible onto your toes, pause for 2 seconds at the top.',
+             'Lower your heels slowly over 3 seconds all the way down to maximum stretch.',
+             'Repeat. Calves respond best to high reps AND full range of motion — half reps give half results.'],
+     errors:['Rushing through reps with no pause — calves need time under tension','Not going to full range — both top and bottom matter','Bouncing at the bottom — use the stretch, do not bounce out of it','Going straight to the next set without enough reps — calves are stubborn, they need volume']},
+    {name:'Plank + Ab Circuit',sets:'3',reps:'45s',note:'Plank / leg raises / crunches',
+     muscles:['Core','Abs','Hip Flexors'],primary:['Core'],
+     steps:['PLANK: Forearms on floor, elbows under shoulders. Body rigid from head to heels. Squeeze everything — abs, glutes, quads. Hold for 20 seconds.',
+             'LEG RAISES: Lie flat, hands under your lower back for support. Raise straight legs to 90°, lower slowly without touching the floor. 10 reps.',
+             'BICYCLE CRUNCHES: Hands behind head, alternate bringing elbow to opposite knee with a twist. 15 reps each side.',
+             'Rest 45–60s between circuits. Focus on quality contractions, not just completing reps.'],
+     errors:['Hips rising in plank — you should be a straight line, not a tent','Using momentum in leg raises — slow and controlled, feel the lower abs work','Pulling your neck in crunches — your hands are there for guidance, not pulling','Holding your breath — breathe out on the effort of every rep']},
+  ]},
+  {day:'Thursday',focus:'Push — Shoulders',tag:'PUSH',exercises:[
+    {name:'Dumbbell Overhead Press',sets:'4',reps:'10–12',note:'Seated or standing',
+     muscles:['Front Delts','Side Delts','Triceps','Upper Traps'],primary:['Front Delts','Side Delts'],
+     steps:['Hold dumbbells at shoulder height, palms facing forward, elbows slightly in front of your body.',
+             'Press the dumbbells up and slightly inward so they nearly touch overhead. Do not flare elbows out at 90° to start.',
+             'Fully extend your arms overhead. Biceps should be near your ears at the top.',
+             'Lower back to shoulder height with control — do not let them drop.'],
+     errors:['Arching your lower back excessively — brace your core, especially seated','Elbows starting too far back (behind the body) — this impinges your shoulder','Not pressing to full lockout — you miss the top of the lateral head activation','Leaning back like a decline press — keep your torso upright']},
+    {name:'Dumbbell Lateral Raise',sets:'4',reps:'15',note:'Slight bend in elbows',
+     muscles:['Side Delts'],primary:['Side Delts'],
+     steps:['Hold dumbbells at your sides with a very slight bend in the elbows — maintain this exact angle throughout.',
+             'Raise your arms out to the sides until they are parallel to the floor. Lead with your elbows, not your hands.',
+             'At the top, tilt the dumbbells slightly forward (as if pouring a jug) to better target the side delt.',
+             'Lower slowly over 2–3 seconds. The side delt is a small muscle — light weight and perfect form beats heavy and sloppy every time.'],
+     errors:['Shrugging your traps as you raise — your traps should not be doing the work','Swinging your body to get the weight up — go lighter','Raising too high — stopping at parallel (shoulder height) is enough','Bending elbows too much — you turn it into a different exercise']},
+    {name:'Dumbbell Front Raise',sets:'3',reps:'12',note:'',
+     muscles:['Front Delts','Upper Chest'],primary:['Front Delts'],
+     steps:['Hold dumbbells in front of your thighs, palms facing you. Slight knee bend, core braced.',
+             'Raise one or both dumbbells straight in front of you to shoulder height, keeping a slight elbow bend.',
+             'Pause at the top for 1 second.',
+             'Lower slowly. Alternate arms or do both simultaneously — both work.'],
+     errors:['Swinging your torso back — brace your core and stay still','Raising above shoulder height — unnecessary and shifts work to traps','Going too fast — the front delt needs slow, controlled tension','Too much weight — front raises are an isolation move, keep it controlled']},
+    {name:'Arnold Press',sets:'3',reps:'10',note:'',
+     muscles:['Front Delts','Side Delts','Rear Delts','Triceps'],primary:['Front Delts','Side Delts'],
+     steps:['Hold dumbbells at shoulder height, palms facing you (like the top of a curl), elbows tucked in front.',
+             'Begin pressing while simultaneously rotating your palms outward.',
+             'By the time the dumbbells are above your head, palms face fully forward.',
+             'Reverse the rotation as you lower back to the starting position. This rotation hits all three delt heads.'],
+     errors:['Rotating too early or too late — the rotation and the press should be one smooth motion','Rushing through the movement — the rotation is the point, do it slowly','Arching your back — brace your core','Too much weight — the coordination required means you need to go lighter than a standard press']},
+    {name:'Resistance Band Face Pull',sets:'3',reps:'15',note:'Rear delt / posture',
+     muscles:['Rear Delts','Rotator Cuff','Traps','Rhomboids'],primary:['Rear Delts'],
+     steps:['Anchor the band at face height. Grab it with both hands, palms facing down, arms extended.',
+             'Pull the band toward your face, spreading your hands apart as you go — your hands should end up beside your ears.',
+             'At the peak, your elbows are high and wide, hands beside your ears, thumbs pointing behind you.',
+             'Hold for 1 second, then return slowly. This exercise fixes posture and protects your shoulders — do not rush it.'],
+     errors:['Pulling to your chin instead of your face — elbows should stay HIGH','Not spreading hands apart — the external rotation is the whole point','Too much weight causing you to lean back — stand tall','Rushing through — this is a shoulder health exercise, slow and deliberate every rep']},
+    {name:'Push-up Burnout',sets:'2',reps:'Max',note:'Finisher',
+     muscles:['Chest','Triceps','Front Delts'],primary:['Chest','Triceps'],
+     steps:['Standard push-up position. This is a finisher — your shoulders will already be tired.',
+             'Go to absolute muscle failure — the last rep should be a genuine struggle.',
+             'If regular push-ups become too easy mid-set, switch to wide-grip or incline to continue.',
+             'Rest only 60 seconds between the two sets. The goal is maximum total volume.'],
+     errors:['Stopping before true failure — a burnout means exactly that','Cheating form when tired — if you cannot do a proper rep, stop','Holding your breath — breathe through every rep','Skipping this because you are tired — that is exactly why it is there']},
+  ]},
+  {day:'Friday',focus:'Pull — Back Width & Rear Delts',tag:'PULL',exercises:[
+    {name:'Pull-ups (neutral grip)',sets:'4',reps:'Max',note:'Full stretch at bottom',
+     muscles:['Lats','Biceps','Brachialis'],primary:['Lats'],
+     steps:['Grip the bar with palms facing each other (neutral). Hands roughly shoulder-width.',
+             'Dead hang — arms fully extended. Engage your shoulder blades first before pulling.',
+             'Pull until your chin clears the bar, leading with your elbows.',
+             'Lower slowly and completely back to a dead hang. Neutral grip is easier than overhand and great for elbow health.'],
+     errors:['Not hanging all the way down — every rep from a full dead hang','Swinging your legs for momentum — strict, controlled reps only','Chin barely clearing the bar — aim to get your upper chest toward the bar','Forgetting to initiate with your scapula — shoulder blades first, then arms']},
+    {name:'Dumbbell Single-Arm Row',sets:'3',reps:'12',note:'Drive elbow to ceiling',
+     muscles:['Lats','Rhomboids','Rear Delts','Biceps'],primary:['Lats'],
+     steps:['Support yourself on a bench or chair with your opposite hand and knee. Dumbbell hanging straight down.',
+             'Keep your back flat and parallel to the floor. Do not rotate your torso.',
+             'Row the dumbbell up by driving your elbow toward the ceiling and pulling it past your hip — get a big range of motion.',
+             'Squeeze your lat hard at the top for 1 second. Lower slowly.'],
+     errors:['Rotating your body to swing the weight — the weight should move, not your spine','Not pulling high enough — your elbow should go past your back, not just to your body','Rounding your back — keep it flat throughout','Short range of motion — arm should be fully extended at the bottom']},
+    {name:'Resistance Band Pull-Apart',sets:'3',reps:'20',note:'Rear delt / posture',
+     muscles:['Rear Delts','Rhomboids','Traps'],primary:['Rear Delts','Rhomboids'],
+     steps:['Hold the band with both hands at shoulder width, arms straight out in front at shoulder height.',
+             'Pull the band apart by moving both hands outward until the band touches your chest.',
+             'Squeeze your shoulder blades together hard at the peak for 1 second.',
+             'Return slowly. This is a high-rep exercise — feel the burn in your rear delts and between your shoulder blades.'],
+     errors:['Bending your elbows — arms stay straight throughout','Moving too fast — slow and controlled, feel the rear delts working','Not getting a full range of motion — pull all the way until the band touches your chest','Shrugging your shoulders — keep them packed down, not up by your ears']},
+    {name:'Dumbbell Shrugs',sets:'3',reps:'15',note:'Upper traps',
+     muscles:['Upper Traps'],primary:['Upper Traps'],
+     steps:['Hold dumbbells at your sides, arms straight. Stand tall.',
+             'Shrug your shoulders straight up toward your ears as high as possible.',
+             'Hold at the top for 1–2 seconds, squeezing your traps.',
+             'Lower slowly. No rolling — straight up and straight down.'],
+     errors:['Rolling your shoulders (forward or backward circles) — straight up and down only, rolling adds no benefit and can stress your AC joint','Not holding at the top — the squeeze is essential','Using too much weight and barely moving — moderate weight with full range beats heavy and tiny shrugs','Going too fast — slow the eccentric down']},
+    {name:'Reverse Dumbbell Curl',sets:'3',reps:'12',note:'Forearms & brachialis',
+     muscles:['Brachialis','Brachioradialis','Forearms'],primary:['Brachialis','Brachioradialis'],
+     steps:['Hold dumbbells with palms facing down (pronated grip). Elbows at your sides.',
+             'Curl the dumbbells upward, maintaining the pronated grip throughout — do not rotate your wrists.',
+             'Go to full contraction at the top.',
+             'Lower slowly. This is harder than a regular curl — use lighter weight than you think you need.'],
+     errors:['Rotating your wrists during the curl — keep palms facing down the whole time','Upper arms drifting forward — elbows stay at your sides','Going too heavy and compensating with body swing — strict form, lighter weight','Skipping this exercise — forearm and brachialis development makes your arms look much thicker']},
+    {name:'Dumbbell Concentration Curl',sets:'3',reps:'10',note:'Peak contraction',
+     muscles:['Biceps'],primary:['Biceps'],
+     steps:['Sit on a bench or chair, legs wide. Hold a dumbbell in one hand, elbow braced against the inside of your thigh.',
+             'Curl the dumbbell up slowly, rotating your wrist so your pinky leads at the top.',
+             'At the top, your bicep is fully contracted — hold for 2 full seconds.',
+             'Lower very slowly over 3 seconds. The slow negative is where a lot of growth happens.'],
+     errors:['Moving your elbow off your thigh — it must stay braced the entire rep','Not holding at the top — the 2-second squeeze is essential for peak contraction','Rushing the lowering phase — the 3-second descent is intentional','Too heavy — you cannot get proper form if you cannot hold the top position']},
+  ]},
+  {day:'Saturday',focus:'Full Body Power / Weak Points',tag:'FULL',exercises:[
+    {name:'Dumbbell Thruster (squat to press)',sets:'3',reps:'12',note:'Compound power',
+     muscles:['Quads','Glutes','Shoulders','Triceps','Core'],primary:['Quads','Glutes','Shoulders'],
+     steps:['Hold dumbbells at shoulder height, elbows in front, feet shoulder-width.',
+             'Squat down until thighs are parallel to the floor, keeping your chest tall.',
+             'Drive up explosively from the squat, using the momentum to help press the dumbbells overhead.',
+             'Arms fully extended at the top. Lower dumbbells back to shoulders as you descend into the next squat in one fluid motion.'],
+     errors:['Pressing and squatting as two separate movements — it should be one fluid explosive motion','Losing your chest position in the squat — stay upright','Not using the hip drive to assist the press — the power should come from your legs','Pressing with flared elbows — keep them slightly in front']},
+    {name:'Pull-up Superset with Push-up',sets:'3',reps:'8+8',note:'',
+     muscles:['Back','Biceps','Chest','Triceps'],primary:['Back','Chest'],
+     steps:['Do 8 pull-ups immediately followed by 8 push-ups with no rest between them.',
+             'Pull-ups: any grip you prefer. Pull-ups: full dead hang to chin over bar.',
+             'Push-ups: go straight to the floor immediately after your last pull-up.',
+             'Rest 90 seconds between supersets. This combination hits opposing muscle groups — very efficient.'],
+     errors:['Resting between the pull-up and push-up — the superset only works if they are back to back','Sloppy pull-ups because you are thinking about the push-ups coming — quality reps for both','Going to failure on pull-ups so you cannot do push-ups — save a rep or two','Reducing rest too much between supersets — 90 seconds is the minimum for quality reps']},
+    {name:'Dumbbell Deadlift',sets:'3',reps:'12',note:'Full back chain',
+     muscles:['Hamstrings','Glutes','Lower Back','Traps','Forearms'],primary:['Hamstrings','Glutes','Lower Back'],
+     steps:['Hold dumbbells in front of your thighs, feet hip-width, soft bend in knees.',
+             'Hinge at your hips, pushing them back. Back stays flat, chest stays tall. Dumbbells travel down close to your legs.',
+             'Lower until the dumbbells are at mid-shin or just below — feel the stretch through the entire back of your body.',
+             'Drive through your heels, extending your hips forward to return. Squeeze glutes at the top.'],
+     errors:['Rounding your lower back — the most important cue in the entire deadlift is a flat back','Treating it like a squat — this is a hip hinge, not a squat','Letting the dumbbells drift away from your body — keep them close to your legs','Not fully extending your hips at the top — stand tall and squeeze']},
+    {name:'Lateral Raises + Curl Superset',sets:'3',reps:'12+12',note:'',
+     muscles:['Side Delts','Biceps'],primary:['Side Delts','Biceps'],
+     steps:['Do 12 lateral raises immediately followed by 12 bicep curls.',
+             'Lateral raises: arms to shoulder height, slow and controlled, elbows leading.',
+             'Curl immediately after: elbows at sides, full range of motion.',
+             'Rest 60 seconds. This efficient pairing means your curling arms are fresh for curls after raises.'],
+     errors:['Using too much weight for the lateral raise — by the superset stage your delts will already be tired','Rushing through either exercise — quality beats speed','Not getting full range of motion on the curls because your hands are already tired','Skipping the raises and just doing curls — the combination is the workout']},
+    {name:'Core Circuit',sets:'3',reps:'60s',note:'Mountain climbers / bicycle crunches',
+     muscles:['Core','Abs','Hip Flexors','Obliques'],primary:['Core'],
+     steps:['MOUNTAIN CLIMBERS: High plank position. Drive your knees alternately toward your chest rapidly. Keep hips level. 30 seconds.',
+             'Without resting, move to BICYCLE CRUNCHES: On your back, hands behind head. Alternate bringing elbow to opposite knee. 30 seconds.',
+             'That is 60 seconds of total work. Rest 45 seconds.',
+             'Focus on keeping your lower back pressed to the floor during bicycle crunches — do not arch.'],
+     errors:['Hips rising during mountain climbers — keep a rigid plank','Going so fast you lose form — controlled speed on mountain climbers is more effective than frantic','Pulling your neck in bicycle crunches — your abs should lift your shoulders, not your hands pull your head','Short range of motion on bicycles — fully rotate and extend each time']},
+    {name:'Resistance Band Finisher',sets:'2',reps:'20',note:'Any weak point focus',
+     muscles:['Variable'],primary:['Variable'],
+     steps:['Choose your current weakest muscle group and do a high-rep isolation exercise with the band.',
+             'Options: Banded pull-aparts (rear delts), banded curls (biceps), banded pushdowns (triceps), banded lateral raises (side delts).',
+             'Go for 20 reps with a full squeeze at the top of each rep. The pump here is the goal.',
+             'Treat this as active recovery for your weakest link — finish every session by giving extra attention to what is lagging.'],
+     errors:['Choosing something you are already good at — this is specifically for your WEAK POINTS','Going through the motions — every rep needs a real contraction','Using a band that is too light and provides no real resistance','Skipping this because you are tired — weak points do not fix themselves']},
+  ]},
+  {day:'Sunday',focus:'Rest & Recovery',tag:'REST',exercises:[]},
+];
+
+const TIPS = [
+  {icon:'🍗',title:'Protein Target',body:'Aim for 1.6–2g per kg bodyweight → ~110–136g protein/day. Eggs, chicken, Greek yogurt, and legumes are your best sources.'},
+  {icon:'😴',title:'Sleep',body:'8–9 hours is non-negotiable at 17. Most muscle growth happens during deep sleep via GH release. No training can compensate for poor sleep.'},
+  {icon:'📈',title:'Progressive Overload',body:'Add 1–2 reps or a small weight increase every 1–2 weeks. This is the #1 driver of muscle growth. Without progression, you plateau.'},
+  {icon:'💧',title:'Hydration',body:'2–3 litres of water per day. Muscle is ~75% water — even mild dehydration kills strength and performance significantly.'},
+  {icon:'⏱️',title:'Rest Between Sets',body:'30–60 seconds for isolation exercises, 60–90 seconds for compounds like squats and rows. Keep sessions dense and focused.'},
+  {icon:'🔄',title:'Mind-Muscle Connection',body:'Slow your reps to 2s up, 1s squeeze at the top, 3s down. Feel the muscle contract and stretch — do not just move the weight.'},
+  {icon:'🧠',title:'Consistency Over Intensity',body:'Showing up 6 days a week at 80% beats going all-out once and burning out. The best workout is the one you keep doing.'},
+  {icon:'🍽️',title:'Eat Around Your Workouts',body:'Have protein + carbs within 1–2 hours after training. A banana + Greek yogurt is perfect. Pre-workout: a light carb snack 30–60 min before.'},
+];
+
+let activeDay = 0;
+let checked = {};
+
+function switchScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+}
+
+function renderDayTabs(){
+  const tabs = document.getElementById('day-tabs');
+  tabs.innerHTML = PLAN.map((d,i)=>{
+    const tc = TAG_COLORS[d.tag];
+    const active = i===activeDay;
+    return `<button class="day-tab${active?' active':''}" 
+      style="background:${active?'#f1f5f9':'var(--surface)'};color:${active?'#0f172a':'var(--text3)'};${active?'box-shadow:0 2px 8px rgba(0,0,0,.3)':''}"
+      onclick="selectDay(${i})">
+      <span>${d.day.slice(0,3).toUpperCase()}</span>
+      <small>${d.tag}</small>
+    </button>`;
+  }).join('');
+}
+
+function renderDay(){
+  const d = PLAN[activeDay];
+  const tc = TAG_COLORS[d.tag];
+  document.documentElement.style.setProperty('--accent', tc.accent);
+  const progress = d.exercises.filter((_,i)=>checked[`${activeDay}-${i}`]).length;
+  const pct = d.exercises.length ? (progress/d.exercises.length*100) : 0;
+
+  let html = `<div class="card">
+    <div class="card-header" style="border-left-color:${tc.accent}">
+      <div class="card-header-row">
+        <div>
+          <h2>${d.day}</h2>
+          <p>${d.focus}</p>
+        </div>
+        <span class="tag" style="background:${tc.bg};color:${tc.color}">${d.tag}</span>
+      </div>`;
+
+  if(d.exercises.length){
+    html += `<div class="prog-wrap">
+      <div class="prog-row"><span>PROGRESS</span><span>${progress}/${d.exercises.length}</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${tc.accent}"></div></div>
+    </div>`;
+  }
+
+  html += `</div>`;
+
+  if(!d.exercises.length){
+    html += `<div class="rest-day"><div class="emoji">🌿</div><h3>Rest Day</h3><p>Recover, eat well, sleep 8–9h</p></div>`;
+  } else {
+    html += `<div class="col-head">
+      <span class="col-ex">EXERCISE</span>
+      <span class="col-sets">SETS</span>
+      <span class="col-reps">REPS</span>
+      <span class="col-info"></span>
+    </div>`;
+    d.exercises.forEach((ex,i)=>{
+      const done = !!checked[`${activeDay}-${i}`];
+      html += `<div class="ex-row${done?' done':''}" onclick="toggleEx(${i})">
+        <div class="check${done?' ticked':''}" style="${done?`background:${tc.accent}`:''}">
+          ${done?`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>`:''}
+        </div>
+        <div class="ex-meta">
+          <div class="ex-name">${ex.name}</div>
+          ${ex.note?`<div class="ex-note">${ex.note}</div>`:''}
+        </div>
+        <div class="ex-sets">${ex.sets}</div>
+        <div class="ex-reps">${ex.reps}</div>
+        <button class="info-btn" onclick="event.stopPropagation();showForm(${activeDay},${i})" title="Form guide">?</button>
+      </div>`;
+    });
+  }
+
+  html += `</div>`;
+  document.getElementById('day-content').innerHTML = html;
+}
+
+function selectDay(i){
+  activeDay = i;
+  renderDayTabs();
+  renderDay();
+}
+
+function toggleEx(i){
+  const key = `${activeDay}-${i}`;
+  checked[key] = !checked[key];
+  renderDay();
+}
+
+function showForm(dayIdx, exIdx){
+  const ex = PLAN[dayIdx].exercises[exIdx];
+  const d = PLAN[dayIdx];
+  const tc = TAG_COLORS[d.tag];
+  document.getElementById('modal-title').textContent = ex.name;
+  document.getElementById('modal-tag').innerHTML = `<span style="color:${tc.accent};font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase">${d.tag} · ${d.focus}</span>`;
+
+  let body = '';
+
+  // Muscles
+  body += `<div class="form-section">
+    <div class="form-section-title">Muscles Worked</div>
+    <div class="muscles-row">`;
+  ex.muscles.forEach(m=>{
+    const isPrimary = ex.primary.includes(m);
+    body += `<span class="muscle-pill${isPrimary?' primary':''}">${m}${isPrimary?' ★':''}</span>`;
+  });
+  body += `</div></div>`;
+
+  // Steps
+  body += `<div class="form-section">
+    <div class="form-section-title">How To Do It</div>`;
+  ex.steps.forEach((s,i)=>{
+    body += `<div class="form-step">
+      <div class="step-num" style="background:${tc.accent}">${i+1}</div>
+      <div class="step-text">${s}</div>
+    </div>`;
+  });
+  body += `</div>`;
+
+  // Errors
+  body += `<div class="form-section">
+    <div class="form-section-title">Common Mistakes</div>
+    <div class="common-errors">`;
+  ex.errors.forEach(e=>{
+    body += `<div class="error-item"><div class="error-dot"></div><div>${e}</div></div>`;
+  });
+  body += `</div></div>`;
+
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e){
+  if(e && e.target !== document.getElementById('modal-overlay') && !e.target.classList.contains('modal-close')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderTips(){
+  document.getElementById('tips-grid').innerHTML = TIPS.map(t=>`
+    <div class="tip-card">
+      <div class="tip-icon">${t.icon}</div>
+      <div><div class="tip-title">${t.title}</div><div class="tip-body">${t.body}</div></div>
+    </div>`).join('');
+}
+
+// Init
+renderDayTabs();
+renderDay();
+renderTips();
+
+// Service worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
+</body>
+</html>
